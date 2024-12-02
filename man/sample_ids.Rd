@@ -4,13 +4,16 @@
 \alias{sample_ids}
 \title{Sample Patient Ids}
 \usage{
-sample_ids(ids, strata = rep(1, length(ids)))
+sample_ids(ids, strata = rep(1, length(ids)), cluster = NULL)
 }
 \arguments{
 \item{ids}{vector to sample from}
 
 \item{strata}{strata indicator, ids are sampled within each strata
 ensuring the that the numbers of each strata are maintained}
+
+\item{cluster}{(optional) cluster indicator. If given, sample clusters
+instead of ids}
 }
 \description{
 Performs a stratified bootstrap sample of IDS

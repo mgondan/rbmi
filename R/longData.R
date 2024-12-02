@@ -1,4 +1,3 @@
-
 #' R6 Class for Storing / Accessing & Sampling Longitudinal Data
 #'
 #' @description
@@ -43,6 +42,13 @@ longDataConstructor <- R6::R6Class(
 
         #' @field formula A formula expressing how the design matrix for the data should be constructed
         formula = NULL,
+
+
+        #' @field cluster A numeric vector indicating which cluster each corresponding value of
+        #' `self$ids` belongs to. If no cluster variable is defined this filed is NULL.
+        #' This field is only used as part of the `self$sample_ids()` function to enable
+        #' cluster-based bootstrap sampling
+        cluster = NULL,
 
 
         #' @field strata A numeric vector indicating which strata each corresponding value of
@@ -343,7 +349,7 @@ longDataConstructor <- R6::R6Class(
         #' how many non-missing visits they had).
         #' @return Character vector of ids.
         sample_ids = function() {
-            sample_ids(self$ids, self$strata)
+            sample_ids(self$ids, self$strata, self$cluster)
         },
 
 
@@ -516,6 +522,25 @@ longDataConstructor <- R6::R6Class(
         },
 
 
+        #' @description
+        #' Populates the `self$cluster` variable. If the user has specified a cluster variable
+        #' the first visit is used to determine the value of this variable.
+        set_cluster = function() {
+            ## Use first row to determine strata i.e. no time varying strata
+            if (length(self$vars$cluster) > 0) {
+                cluster_index <- vapply(
+                    self$ids,
+                    function(x) self$indexes[[x]][[1]],
+                    numeric(1),
+                    USE.NAMES = FALSE
+                )
+                cluster_data <- self$data[cluster_index, self$vars$cluster]
+                self$cluster <- as_strata(cluster_data)
+            } else {
+                self$cluster <- NULL
+            }
+        },
+
 
         #' @description
         #' Constructor function.
@@ -540,6 +565,7 @@ longDataConstructor <- R6::R6Class(
             for (id in subjects) self$add_subject(id)
             self$ids <- subjects
             self$set_strata()
+            self$set_cluster()
             self$check_has_data_at_each_visit()
         }
 

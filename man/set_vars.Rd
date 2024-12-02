@@ -11,6 +11,7 @@ set_vars(
   group = "group",
   covariates = character(0),
   strata = group,
+  cluster = character(0),
   strategy = "strategy"
 )
 }
@@ -29,6 +30,9 @@ See details.}
 \item{strata}{The name of the any stratification variable to be used in the context of bootstrap
 sampling. See details.}
 
+\item{cluster}{The name of the any cluster variable to be used in the context of bootstrap
+sampling.}
+
 \item{strategy}{The name of the "strategy" variable. A length 1 character vector.}
 }
 \description{
@@ -46,6 +50,10 @@ Currently \code{strata} is only used by \code{\link[=draws]{draws()}} in combina
 and \code{method_approxbayes()} in order to allow for the specification of stratified bootstrap sampling.
 By default \code{strata} is set equal to the value of \code{group} as it is assumed most users will want to
 preserve the group size between samples. See \code{\link[=draws]{draws()}} for more details.
+
+Currently \code{cluster} is only used by \code{\link[=draws]{draws()}} in combination with \code{method_condmean(type = "bootstrap")}
+and \code{method_approxbayes()} in order to allow for clustered bootstrap sampling. By default \code{cluster} is
+set to NULL, indicating independent sampling.
 
 Likewise, currently the \code{strategy} argument is only used by \code{\link[=draws]{draws()}} to specify the name of the
 strategy variable within the \code{data_ice} data.frame. See \code{\link[=draws]{draws()}} for more details.

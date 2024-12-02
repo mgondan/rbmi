@@ -30,6 +30,11 @@ to this object should be avoided if possible.
 
 \item{\code{formula}}{A formula expressing how the design matrix for the data should be constructed}
 
+\item{\code{cluster}}{A numeric vector indicating which cluster each corresponding value of
+\code{self$ids} belongs to. If no cluster variable is defined this filed is NULL.
+This field is only used as part of the \code{self$sample_ids()} function to enable
+cluster-based bootstrap sampling}
+
 \item{\code{strata}}{A numeric vector indicating which strata each corresponding value of
 \code{self$ids} belongs to.
 If no stratification variable is defined this will default to 1 for all subjects
@@ -113,6 +118,7 @@ for all observations. This list is populated by a call to \code{self$set_strateg
 \item \href{#method-longdata-set_strategies}{\code{longDataConstructor$set_strategies()}}
 \item \href{#method-longdata-check_has_data_at_each_visit}{\code{longDataConstructor$check_has_data_at_each_visit()}}
 \item \href{#method-longdata-set_strata}{\code{longDataConstructor$set_strata()}}
+\item \href{#method-longdata-set_cluster}{\code{longDataConstructor$set_cluster()}}
 \item \href{#method-longdata-new}{\code{longDataConstructor$new()}}
 \item \href{#method-longdata-clone}{\code{longDataConstructor$clone()}}
 }
@@ -322,6 +328,17 @@ The first visit is used to determine the value of those variables. If no stratif
 have been specified then everyone is defined as being in strata 1.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{longDataConstructor$set_strata()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-longdata-set_cluster"></a>}}
+\if{latex}{\out{\hypertarget{method-longdata-set_cluster}{}}}
+\subsection{Method \code{set_cluster()}}{
+Populates the \code{self$cluster} variable. If the user has specified a cluster variable
+the first visit is used to determine the value of this variable.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{longDataConstructor$set_cluster()}\if{html}{\out{</div>}}
 }
 
 }

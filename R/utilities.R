@@ -360,6 +360,9 @@ sort_by <- function(df, vars = NULL, decreasing = FALSE) {
 #' @param strata The name of the any stratification variable to be used in the context of bootstrap
 #' sampling. See details.
 #'
+#' @param cluster The name of the any cluster variable to be used in the context of bootstrap
+#' sampling.
+#'
 #' @param strategy The name of the "strategy" variable. A length 1 character vector.
 #'
 #' @details
@@ -374,6 +377,10 @@ sort_by <- function(df, vars = NULL, decreasing = FALSE) {
 #' and `method_approxbayes()` in order to allow for the specification of stratified bootstrap sampling.
 #' By default `strata` is set equal to the value of `group` as it is assumed most users will want to
 #' preserve the group size between samples. See [draws()] for more details.
+#'
+#' Currently `cluster` is only used by [draws()] in combination with `method_condmean(type = "bootstrap")`
+#' and `method_approxbayes()` in order to allow for clustered bootstrap sampling. By default `cluster` is
+#' set to NULL, indicating independent sampling.
 #'
 #' Likewise, currently the `strategy` argument is only used by [draws()] to specify the name of the
 #' strategy variable within the `data_ice` data.frame. See [draws()] for more details.
@@ -404,6 +411,7 @@ set_vars <- function(
     group = "group",
     covariates = character(0),
     strata = group,
+    cluster = character(0),
     strategy = "strategy"
 ) {
     x <- list(
@@ -413,6 +421,7 @@ set_vars <- function(
         group = group,
         covariates = covariates,
         strata = strata,
+        cluster = cluster,
         strategy = strategy
     )
     class(x) <- c("ivars", "list")
