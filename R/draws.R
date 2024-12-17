@@ -229,8 +229,11 @@ draws.condmean <- function(data, data_ice = NULL, vars, method, ncores = 1, quie
             sample_stack = get_bootstrap_stack(longdata, method)
         )
     } else if (method$type == "jackknife") {
+        n_target_samples <- length(longdata$ids)
+        if(!is.null(longdata$cluster))
+            n_target_samples <- length(unique(longdata$cluster))
         extra_opts <- list(
-            n_target_samples = length(longdata$ids),
+            n_target_samples = n_target_samples,
             failure_limit = 0,
             sample_stack = get_jackknife_stack(longdata)
         )

@@ -38,7 +38,46 @@ as_strata <- function(...) {
 #' @param ids  vector to sample from
 #' @param strata  strata indicator, ids are sampled within each strata
 #' ensuring the that the numbers of each strata are maintained
-#' @param cluster  (optional) cluster indicator. If given, sample clusters
+#' @param cluster (optional) cluster indicator. If given, sample clusters
+#' instead of ids
+#'
+#' @examples
+#' \dontrun{
+#' sample_ids( c("a", "b", "c", "d"), strata = c(1,1,2,2))
+#' }
+sample_ids <- function(ids, strata = rep(1, length(ids)), cluster = NULL) {
+    if(is.null(cluster)) {
+        res <- tapply(
+            X = ids,
+            INDEX = strata,
+            FUN = function(x) {
+                y <- sample(length(x), size = length(x), replace = TRUE)
+                x[y]
+            }
+        )
+        return(unlist(res, use.names = FALSE))
+    }
+
+    res <- tapply(
+        X = data.frame(ids, cluster),
+        INDEX = strata,
+        FUN = function(x) {
+            cl <- sample(unique(x[, 2]), replace=TRUE)
+            do.call("c", lapply(cl, function(i) x[x[, 2] == i, 1]))
+        }
+    )
+    return(unlist(res, use.names = FALSE))
+}
+
+#' Sample Patient Ids
+#'
+#' Performs a stratified bootstrap sample of IDS
+#' ensuring the return vector is the same length as the input vector
+#'
+#' @param ids  vector to sample from
+#' @param strata  strata indicator, ids are sampled within each strata
+#' ensuring the that the numbers of each strata are maintained
+#' @param cluster (optional) cluster indicator. If given, sample clusters
 #' instead of ids
 #'
 #' @examples

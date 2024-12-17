@@ -67,10 +67,28 @@ get_bootstrap_stack <- function(longdata, method, stack = Stack$new()) {
 #' @param longdata A [longDataConstructor()] object
 #' @param method A `method` object
 #' @param stack A [Stack()] object (this is only exposed for unit testing purposes)
-get_jackknife_stack <- function(longdata, method, stack = Stack$new()) {
+get_jackknife_stack1 <- function(longdata, method, stack = Stack$new()) {
     ids <- longdata$ids
     stack$add(
         lapply(seq_along(ids), function(i) ids[-i])
     )
+    return(stack)
+}
+
+#' Creates a stack object populated with jackknife samples
+#'
+#' Function creates a [Stack()] object and populated the stack with jackknife
+#' samples based upon
+#'
+#' @param longdata A [longDataConstructor()] object
+#' @param method A `method` object
+#' @param stack A [Stack()] object (this is only exposed for unit testing purposes)
+get_jackknife_stack <- function(longdata, method, stack = Stack$new()) {
+    ids <- longdata$ids
+    cluster <- longdata$cluster
+    if(is.null(cluster))
+        stack$add(lapply(seq_along(ids), function(i) ids[-i]))
+    else
+        stack$add(lapply(unique(cluster), function(i) ids[cluster != i]))
     return(stack)
 }

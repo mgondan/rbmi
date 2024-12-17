@@ -138,7 +138,121 @@ simulate_test_data <- function(
     return(dat2)
 }
 
+#' Create simulated datasets with clustering
+#'
+#' @description
+#' Creates a longitudinal dataset in the format that `rbmi` was
+#' designed to analyse. This function adds some cluster effects.
+#'
+#' @seealso [simulate_test_data()]
+#'
+#' @param n the number of subjects to sample.
+#' @param sd the standard deviations for the outcome at each visit.
+#' @param cor the correlation coefficients between the outcome values at each visit.
+#' @param tau intra-class-correlation for patients of the same cluster.
+#' @param mu the coefficients to use to construct the mean outcome value at each visit. Must
+#' be a named list with elements `int`, `age`, `sex`, `trt` & `visit`.
+#'
+#' @name simulate_clustered_data
+simulate_clustered_data <- function(
+        n = 200,
+        sd = c(3, 5, 7),
+        cor = c(0.1, 0.7, 0.4),
+        tau = 1,
+        mu = list("int" = 10, "age" = 3, "sex" = 2, "trt" = c(0, 4, 8), "visit" = c(0, 1, 2))
+) {
 
+    nv <- length(sd)
+    assert_that(
+        n %% 2 == 0,
+        msg = "n must be even"
+    )
+    num_dig <- floor(log(x = n, base = 10)) + 1
+    num_dig_vis <- floor(log(x = nv, base = 10)) + 1
+
+    n_cor <- sum(seq_len(length(sd) - 1))
+    assert_that(
+        length(sd) == n_cor,
+        msg = sprintf("There should be %s correlation parameters", n_cor)
+    )
+
+    assert_that(
+        length(tau) == 1,
+        msg = "`tau` must be of length 1"
+    )
+
+    assert_that(
+        length(mu$trt) %in% c(1, nv),
+        msg = sprintf("`mu$trt` must be of length 1 or %s", nv)
+    )
+
+    assert_that(
+        length(mu$visit) %in% c(1, nv),
+        msg = sprintf("`mu$trt` must be of length 1 or %s", nv)
+    )
+
+    pt_ids <- sprintf(paste0("P%0", num_dig, "d"), seq_len(n))
+    vis_ids <- sprintf(paste0("visit_%0", num_dig_vis, "d"), 1:nv)
+    sigma <- as_vcov(sd, cor)
+
+    clu_ids <- sample(1:20, size=n, replace=TRUE)
+    clu_grp <- sample(c("A", "B"), replace=TRUE, size=20)
+
+    covars <- data.frame(
+        cluster = sprintf(paste0("C%0", num_dig, "d"), clu_ids),
+        id = pt_ids,
+        age = rnorm(n),
+        group = factor(clu_grp[clu_ids], levels = c("A", "B")),
+        sex = factor(sample(c("M", "F"), size = n, replace = TRUE), levels = c("M", "F")),
+        stringsAsFactors = FALSE
+    )
+
+    samps <- replicate(
+        n = n,
+        sample_mvnorm(rep(0, nv), sigma),
+        simplify = FALSE
+    )
+    samps_mat <- matrix(unlist(samps), nrow = n, byrow = TRUE)
+    colnames(samps_mat) <- vis_ids
+
+    clu_eff = rnorm(20, mean=0, sd=tau)
+    # No cluster effect at baseline visits
+    samps_mat[, -1] = samps_mat[, -1] + clu_eff[clu_ids]
+
+    samps_dat <- as.data.frame(samps_mat)
+    samps_dat$id <- pt_ids
+
+    dat <- Reduce(rbind, lapply(vis_ids, function(vis) {
+        x <- samps_dat[, c("id", vis)]
+        colnames(x) <- c("id", "outcome")
+        x[["visit"]] <- vis
+        as.data.frame(x)
+    }))
+
+    dat$visit <- factor(dat$visit)
+    dat <- sort_by(dat, c("id", "visit"))
+
+    dat2 <- merge(dat, covars, by = "id")
+    dat2 <- dat2[, c("cluster", "id", "age", "sex", "group", "visit", "outcome")]
+    dat2 <- sort_by(dat2, c("cluster", "id", "visit", "group"))
+
+    assert_that(
+        nrow(dat) == nrow(dat2),
+        ncol(dat2) == ncol(dat) + 4
+    )
+
+    f2n <- function(x) as.numeric(x) - 1
+
+    dat2$id <- factor(dat2$id, levels = pt_ids)
+    dat2$outcome <- dat2$outcome +
+        mu[["int"]] +
+        mu[["age"]] * dat2$age +
+        mu[["sex"]] * f2n(dat2$sex) +
+        rep(mu[["visit"]], length.out = nrow(dat2)) +
+        rep(mu[["trt"]], length.out = nrow(dat2)) * f2n(dat2$group)
+
+    return(dat2)
+}
 
 #' @rdname simulate_test_data
 #' @export
