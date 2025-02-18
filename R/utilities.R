@@ -509,6 +509,41 @@ is_num_char_fact <- function(x) {
 }
 
 
+#' Format method descriptions
+#'
+#' This function formats method descriptions by combining method names and their descriptions.
+#'
+#' @param method A named list of methods and their descriptions.
+#' @return A character vector of formatted method descriptions.
+#' @details If any non-atomic elements are present in the method list, they are converted to
+#' a string representation using `dput()`.
+format_method_descriptions <- function(method) {
+    assertthat::assert_that(is.list(method))
+
+    is_atomic <- vapply(method, is.atomic, logical(1))
+    if (any(!is_atomic)) {
+        method[!is_atomic] <- lapply(
+            method[!is_atomic],
+            function(x) {
+                paste(
+                    capture.output(dput(x)),
+                    collapse = "\n    "
+                )
+            }
+        )
+    }
+    vapply(
+        mapply(
+            function(x, y) sprintf("    %s: %s", y, x),
+            method,
+            names(method),
+            USE.NAMES = FALSE,
+            SIMPLIFY = FALSE
+        ),
+        identity,
+        character(1)
+    )
+}
 
 #' Convert object to dataframe
 #'
@@ -565,11 +600,30 @@ clear_model_cache <- function(cache_dir = getOption("rbmi.cache_dir")) {
     unlink(files)
 }
 
+
 #' Get Compiled Stan Object
 #'
 #' Gets a compiled Stan object that can be used with `rstan::sampling()`
 #' @keywords internal
 get_stan_model <- function() {
+
+    # Compiling Stan models updates the current seed state. This can lead to
+    # non-reproducibility as compiling is conditional on wether there is a cached
+    # model available or not. Thus we save the current seed state and restore it
+    # at the end of this function so that it is in the same state regardless of
+    # whether the model was compiled or not.
+    # See https://github.com/insightsengineering/rbmi/issues/469
+    # Note that .Random.seed is only set if the seed has been set or if a random number
+    # has been generated.
+    current_seed_state <- globalenv()$.Random.seed
+    on.exit({
+        if (is.null(current_seed_state) && exists(".Random.seed", envir = globalenv())) {
+            rm(".Random.seed", envir = globalenv(), inherits = FALSE)
+        } else {
+            assign(".Random.seed", value = current_seed_state, envir = globalenv(), inherits = FALSE)
+        }
+    })
+
     ensure_rstan()
     local_file <- file.path("inst", "stan", "MMRM.stan")
     system_file <- system.file(file.path("stan", "MMRM.stan"), package = "rbmi")
@@ -589,11 +643,13 @@ get_stan_model <- function() {
         file.copy(file_loc, model_file, overwrite = TRUE)
     }
 
-    rstan::stan_model(
+    model <- rstan::stan_model(
         file = model_file,
         auto_write = TRUE,
         model_name = "rbmi_mmrm"
     )
+
+    return(model)
 }
 
 
